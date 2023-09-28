@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Website</title>
+    <style>
+        /* Reset some default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Apply a background image and font to the body */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: url('background-image.jpg'); /* Replace with your background image */
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+}
+
+/* Style the header with a background color, centered text, and padding */
+header {
+    background-color: #007bff;
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Style the header h1 element */
+header h1 {
+    color: #fff;
+    font-size: 36px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Add a subtle text shadow */
+}
+
+/* Center the form and add some padding */
+#recipe-form {
+    text-align: center;
+    padding: 20px 0;
+}
+
+/* Style the input field and search button */
+input[type="text"] {
+    padding: 10px;
+    border: 2px solid #ccc; /* Increase border width for a bolder look */
+    border-radius: 4px;
+    width: 70%;
+    margin-right: 10px;
+    font-size: 16px; /* Increase font size */
+    background-color: #f8f8f8; /* Light gray background */
+    color: #333; /* Darker text color */
+}
+
+button[type="submit"] {
+    padding: 10px 20px;
+    background-color: #ff6600; /* Change button color */
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px; /* Increase font size */
+    transition: background-color 0.3s ease; /* Add a smooth hover effect */
+}
+
+button[type="submit"]:hover {
+    background-color: #ff9900; /* Change button color on hover */
+}
+
+/* Center the main content and add some padding */
+main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Add a subtle box shadow */
+    border-radius: 8px;
+}
+
+/* Style individual recipe cards */
+.recipe {
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle box shadow */
+}
+
+.recipe img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle box shadow to images */
+}
+
+.recipe h2 {
+    font-size: 24px;
+    margin: 10px 0;
+}
+
+/* Style the list of ingredients */
+.recipe ul {
+    list-style: none;
+    padding: 0;
+}
+
+.recipe ul li {
+    margin-bottom: 5px;
+}
+
+/* Style links in the recipes */
+.recipe a {
+    color: #ff6600; /* Change link color */
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease; /* Add a smooth color transition */
+}
+
+.recipe a:hover {
+    color: #ff9900; /* Change link color on hover */
+}
+
+    </style>
+    
+</head>
+<body>
+    <header>
+        <h1>Recipe Search</h1>
+        <form id="recipe-form">
+            <input type="text" id="query" placeholder="Enter ingredients or dish name" required>
+            <button type="submit">Search</button>
+        </form>
+    </header>
+    <main>
+        <div id="recipe-results"></div>
+    </main>
+    <script>
+        
+document.getElementById("recipe-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const query = document.getElementById("query").value;
+    getRecipes(query);
+});
+
+function getRecipes(query) {
+    const apiKey = 'f9002b8fa68d45bf86c1b0169a725dac'; // Replace with your Spoonacular API key
+    const searchUrl = 'https://api.spoonacular.com/recipes/complexSearch';
+
+    const searchQuery = `${searchUrl}?query=${query}&apiKey=${apiKey}`;
+
+    fetch(searchQuery)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.results && data.results.length > 0) {
+                const firstRecipeId = data.results[0].id;
+                getRecipeSummary(firstRecipeId); // Pass the recipe ID here
+            } else {
+                displayRecipes([]);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching recipes:', error);
+        });
+}
+
+function getRecipeSummary(recipeId) {
+    const apiKey = 'f9002b8fa68d45bf86c1b0169a725dac'; // Replace with your Spoonacular API key
+    const summaryUrl = `https://api.spoonacular.com/recipes/${recipeId}/information`;
+
+    fetch(summaryUrl + `?apiKey=${apiKey}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayRecipes([data]);
+        })
+        .catch(error => {
+            console.error('Error fetching recipe summary:', error);
+        });
+}
+
+function displayRecipes(recipes) {
+    const resultsContainer = document.getElementById("recipe-results");
+    resultsContainer.innerHTML = "";
+
+    if (!recipes || recipes.length === 0) {
+        resultsContainer.innerHTML = "<p>No recipes found.</p>";
+        return;
+    }
+
+    recipes.forEach(recipe => {
+        const { title, image, sourceUrl, extendedIngredients, summary } = recipe;
+
+        const ingredientsList = extendedIngredients ? extendedIngredients.map(ingredient => ingredient.original) : [];
+
+        const recipeHTML = `
+            <div class="recipe">
+                <img src="${image}" alt="${title}">
+                <h2><a href="${sourceUrl}" target="_blank">${title}</a></h2>
+                <p>${summary}</p>
+                <h3>Ingredients:</h3>
+                <ul>
+                    ${ingredientsList.map(ingredient => `<li>${ingredient}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+
+        resultsContainer.innerHTML += recipeHTML;
+    });
+}
+
+    </script>
+</body>
+</html>
